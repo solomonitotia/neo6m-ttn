@@ -1,3 +1,23 @@
+//This the decoding function for the ttn side
+/* copy from here
+function Decoder(b, port) {
+  // LSB, Least Significant Bit/Byte first! Your node likely sends MSB instead.
+
+  // Sign-extend the 3rd and 6th bytes into a 4th and 8th byte:
+  var lat = (b[0] | b[1]<<8 | b[2]<<16 | (b[2] & 0x80 ? 0xFF<<48 : 0)) / 10000;
+  var lng = (b[3] | b[4]<<8 | b[5]<<16 | (b[5] & 0x80 ? 0xFF<<48 : 0)) / 10000;
+
+  return {
+    location: {
+      lat: lat,
+      lng: lng
+    },
+    love: "TTN payload functions"
+  };
+}
+//decoder ends here
+*/
+
 #include <TheThingsNetwork.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
@@ -7,8 +27,8 @@ SoftwareSerial serialgps(2,3);
 SoftwareSerial loraSerial = SoftwareSerial(8, 7);
 #define debugSerial Serial
 // Set your AppEUI and AppKey
-const char *appEui = "70B3D57EF000630E";
-const char *appKey = "DC02B9CD60F635CD719BE06DD9EDC792";
+const char *appEui = "70B3D57ED003C94F";
+const char *appKey = "343714C8560C24543159DE365BBBBB47";
 
 // Replace REPLACE_ME with TTN_FP_EU868 or TTN_FP_US915
 #define freqPlan TTN_FP_EU868
@@ -41,7 +61,7 @@ debugSerial.println("===========================");
 
 void loop()
 {
-debugSerial.println("-- LOOP");
+//debugSerial.println("-- LOOP");
 while(serialgps.available()) 
 {
 int c = serialgps.read(); 
@@ -49,15 +69,16 @@ if(gps.encode(c))
 {
 float latitude, longitude;
 gps.f_get_position(&latitude, &longitude);
-uint16_t latit = (latitude,6)*100;
-uint16_t longit = (longitude,6)*100;
+uint8_t coords[6];
+uint32_t latit = (latitude)*10000;
+uint32_t longit = (longitude)*10000;
 
-byte payload[4];
-payload[0] = highByte(latit);
-payload[1] = lowByte(latit);
-payload[2] = highByte(longit);
-payload[3] = lowByte(longit);
-
+coords[0] = latit;
+coords[1] = latit >> 8;
+coords[2] = latit >> 16;
+coords[3] = longit;
+coords[4] = longit >> 8;
+coords[5] = longit >> 16;
 debugSerial.println("-- LOOP");
 debugSerial.print("Latitude: "); 
 debugSerial.println("-- LOOP");
@@ -71,7 +92,7 @@ debugSerial.println();
 
 gps.stats(&chars, &sentences, &failed_checksum);
 
-ttn.sendBytes(payload, sizeof(payload));
+ttn.sendBytes(coords, sizeof(coords));
 delay(2000);
 }
 }
