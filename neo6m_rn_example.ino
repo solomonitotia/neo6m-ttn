@@ -1,11 +1,14 @@
-//This the decoding function for the ttn side
-/* copy from here
+
+/*
+//Decoder function
+
 function Decoder(b, port) {
+
   // LSB, Least Significant Bit/Byte first! Your node likely sends MSB instead.
 
   // Sign-extend the 3rd and 6th bytes into a 4th and 8th byte:
-  var lat = (b[0] | b[1]<<8 | b[2]<<16 | (b[2] & 0x80 ? 0xFF<<48 : 0)) / 10000;
-  var lng = (b[3] | b[4]<<8 | b[5]<<16 | (b[5] & 0x80 ? 0xFF<<48 : 0)) / 10000;
+  var lat = (b[0] | b[1]<<8 | b[2]<<16 | (b[2] & 0x80 ? 0xFF<<24 : 0)) / 10000;
+  var lng = (b[3] | b[4]<<8 | b[5]<<16 | (b[5] & 0x80 ? 0xFF<<24 : 0)) / 10000;
 
   return {
     location: {
@@ -15,20 +18,18 @@ function Decoder(b, port) {
     love: "TTN payload functions"
   };
 }
-//decoder ends here
 */
-
 #include <TheThingsNetwork.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
 
 TinyGPS gps;
-SoftwareSerial serialgps(2,3);
+SoftwareSerial serialgps(3,4);
 SoftwareSerial loraSerial = SoftwareSerial(8, 7);
 #define debugSerial Serial
 // Set your AppEUI and AppKey
-const char *appEui = "70B3D57ED003C94F";
-const char *appKey = "343714C8560C24543159DE365BBBBB47";
+const char *appEui = "70B3D57ED003EF69";
+const char *appKey = "B4AF71B9B7EF65716A91CA26ABE726CC";
 
 // Replace REPLACE_ME with TTN_FP_EU868 or TTN_FP_US915
 #define freqPlan TTN_FP_EU868
@@ -69,7 +70,7 @@ if(gps.encode(c))
 {
 float latitude, longitude;
 gps.f_get_position(&latitude, &longitude);
-uint8_t coords[6];
+byte coords[6];
 uint32_t latit = (latitude)*10000;
 uint32_t longit = (longitude)*10000;
 
